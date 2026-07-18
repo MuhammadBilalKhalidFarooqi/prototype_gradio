@@ -13,43 +13,35 @@ from pydantic import BaseModel, Field
 load_dotenv(dotenv_path=r'F:\udemy\mera-llama-index-project\.env')
 
 # Raw LLM Config
-raw_llm = Groq(model='qwen/qwen3-32b', api_key=os.getenv('GROQ_API_KEY_FREE_1'), strict = True)
+raw_llm = Groq(model='qwen/qwen3.6-27b', api_key=os.getenv('GROQ_API_KEY_FREE_1'), strict = True)
 
 # Pydantic Validation
 class Structred_LLM_Output(BaseModel):
-    input_category : Literal['Greeting', 'Query', 'Greeting_and_Query'] = Field(
-        description=""" Categorize the user's input:
 
-                        1. Greeting : if input is Normal Greeting/chit chat. 
-                        2. Query: if input is a Genuine Query/Support.  
-                        3. Greeting_and_Query : if input contains a Normal Greeting as well as a User Query.
-                        
-                    """
+    thought_process: str = Field(
+        description="""Explain your step-by-step reasoning based on the "system prompt" rules before making a decision."""
     )
-    escalatation_status:  bool = Field(
-        description=""" Choose exactly one status based on the result of "input_category":
-                        - true : if **input_category** is  **Greeting**.
-                        - true : if **input_category** is  **Query** and the answer to the user's input is avaible in the **Provided Context Documents** and/or **Conversation History**.
-                        - true : if **input_category** is  **Greeting_and_Query** and the answer to the user's input is available in the **Provided Context Documents** and/or **Conversation History**.
-                        - false : if **input_category** is  **Greeting_and_Query** and the answer to the user's input is **NOT** available in the **Provided Context Documents** and/or **Conversation History**.
-                        - false : if **input_category** is  **Query** and the answer to the user's input is **NOT** available in the **Provided Context Documents** and/or **Conversation History**.
-                      """   
-       )                   
+    input_category : Literal['Greeting', 'Customer_Query', 'Greeting_and_Query'] = Field(
+        description="Category of the user's input"
+
+                        
+                        
+                    
+    )
+    is_answer_found : bool = Field(
+        description="""
+                - true : if input_category is Greeting OR the answer to the user_input is found in the **Provided Context Documents** and/or **Conversation History**.
+                - false : otherwise
+                """        
+        
+    )
+    
           
        
   
     Response: str | Literal['answer_not_available'] = Field(
         description="""
-        
-        - answer_not_available : if "escalation_status" is "false".
-        - string(a response to entertain the user's input) : If "escalation_status" is "true"
-        
-        
-        <format for response>
-        - Keep the text under 150 words.
-        - Bold the most important terms or instructions.
-        - Be direct , professional and straightforward (No BS).
-        </format for response>
+        The final response to the user
         """
     )
 # 4. <something_else> If the input is something that cannot be categorized in teh previous 3 categories </something_else>               - false: if  **input_category** is **something_else**.
@@ -75,11 +67,18 @@ system_prompt = """
 <system_instructions>
 <persona>
 You are Customer Support Representative assisting users with "Product Return Queries" based on "Product Return Policies".
-If the 'validation rules' allow to do so then you must be professional, helpful, and keep the conversation going to resolve the user's issue/query . 
+You must be professional, helpful, and keep the conversation going to resolve the user's issue/query. 
 </persona>
+<instructions>
+1. Categorize the user's input
+2. If "input_category" is  "Greeting" then no need to search the **Provided Context Documents**/**Conversation History** BUT if "input_category" is "Query/Greeting_and_Query" then answer strictly based on **Provided Context Documents** and/or **Conversation History**. Do not guess the answer (non-negotiable)
+3. answer_not_available : if "is_answer_found" is "false" | response : The final response to the user, if "is_answer_found" is "true".
+</instructions>
 </system_instructions>
 """
 # Chat Engine
-my_chat_engine = index.as_chat_engine(llm=llm,  system_prompt = system_prompt,chat_mode=ChatMode.CONDENSE_PLUS_CONTEXT, similarity_top_k = 6, node_postprocessors = [reranker])
+def support_bot(user_input):
+    raw_llm
+    my_chat_engine = index.as_chat_engine(llm=llm,  system_prompt = system_prompt,chat_mode=ChatMode.CONDENSE_PLUS_CONTEXT, similarity_top_k = 6, node_postprocessors = [reranker])
 
 
