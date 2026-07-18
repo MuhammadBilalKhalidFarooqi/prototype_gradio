@@ -17,27 +17,42 @@ raw_llm = Groq(model='qwen/qwen3-32b', api_key=os.getenv('GROQ_API_KEY_FREE_1'),
 
 # Pydantic Validation
 class Structred_LLM_Output(BaseModel):
-    input_category : Literal['Greeting', 'Query', 'Greeting and Query', 'something else'] = Field(
-        description=""" 1. <Greeting> if input == Greeting/chit chat.</Greeting> 
-                        2. <Query> if input == User Query </Query> 
-                        3. <Greeting and Query> if input == Greeting as well as a User Query.</Greeting and Query>
-                        4. <something else> if the specific class for user's input is not the previous three</something else>
+    input_category : Literal['Greeting', 'Query', 'Greeting_and_Query'] = Field(
+        description=""" Categorize the user's input:
+
+                        1. Greeting : if input is Normal Greeting/chit chat. 
+                        2. Query: if input is a Genuine Query/Support.  
+                        3. Greeting_and_Query : if input contains a Normal Greeting as well as a User Query.
+                        
                     """
     )
-    escalate_to_human: bool | None | Literal['bad_input']= Field(
-        description="""1. <null> if Field **input_category** == Greeting </null> 
-                        2.<true> if the answer to the user's query is not availble in the **Provided Context Documents** or **Conversation History**</true> 
-                        3.<false> if the answer to the user's query is avaible in the **Provided Context Documents** or **Conversation History**</false>
-                        4.<bad_input> if Field **input_category** == something else</bad_input>
+    escalatation_status:  bool = Field(
+        description=""" Choose exactly one status based on the result of "input_category":
+                        - true : if **input_category** is  **Greeting**.
+                        - true : if **input_category** is  **Query** and the answer to the user's input is avaible in the **Provided Context Documents** and/or **Conversation History**.
+                        - true : if **input_category** is  **Greeting_and_Query** and the answer to the user's input is available in the **Provided Context Documents** and/or **Conversation History**.
+                        - false : if **input_category** is  **Greeting_and_Query** and the answer to the user's input is **NOT** available in the **Provided Context Documents** and/or **Conversation History**.
+                        - false : if **input_category** is  **Query** and the answer to the user's input is **NOT** available in the **Provided Context Documents** and/or **Conversation History**.
+                      """   
+       )                   
+          
+       
+  
+    Response: str | Literal['answer_not_available'] = Field(
+        description="""
+        
+        - answer_not_available : if "escalation_status" is "false".
+        - string(a response to entertain the user's input) : If "escalation_status" is "true"
+        
+        
+        <format for response>
+        - Keep the text under 150 words.
+        - Bold the most important terms or instructions.
+        - Be direct , professional and straightforward (No BS).
+        </format for response>
         """
     )
-    Response : str | None= Field(
-        description= """
-            <null> if Field **escalate_to_human** == true</null>
-            <str> if Field **escalate_to_human** == false. Entertain/Satisfy the user's query<str>
-        """
-    )
-
+# 4. <something_else> If the input is something that cannot be categorized in teh previous 3 categories </something_else>               - false: if  **input_category** is **something_else**.
 # RAG LLM
 llm = raw_llm.as_structured_llm(output_cls=Structred_LLM_Output)
 
@@ -59,13 +74,9 @@ index = VectorStoreIndex.from_vector_store(vector_store=pc_vector_store, embed_m
 system_prompt = """
 <system_instructions>
 <persona>
-You are Customer Support Representative assisting users with "Product Return Queries" based on "Product Return Policies".  You must be professional, helpful, and keep the conversation going to resolve the user's issue/query. 
+You are Customer Support Representative assisting users with "Product Return Queries" based on "Product Return Policies".
+If the 'validation rules' allow to do so then you must be professional, helpful, and keep the conversation going to resolve the user's issue/query . 
 </persona>
-<format>
-- Tone: Direct and straightforward (No BS).
-- Style: Bold the most important words or instructions for easy readability.
-- Length: Keep responses under 150 words.
-</format>
 </system_instructions>
 """
 # Chat Engine
