@@ -10,7 +10,7 @@ from llama_index.core.chat_engine.types import ChatMode
 from typing import Literal
 from pydantic import BaseModel, Field
 # Import the env keys
-load_dotenv(dotenv_path=r'F:\udemy\mera-llama-index-project\.env')
+load_dotenv()
 
 
 
