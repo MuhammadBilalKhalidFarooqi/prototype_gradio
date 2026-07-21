@@ -1,6 +1,7 @@
 import gradio as gr
 from rag import my_chat_engine
 from llama_index.core.llms import ChatMessage, MessageRole
+import os
 def my_chatbot(message, history):
     chat_history = []
     for msg in history:
@@ -22,5 +23,5 @@ def my_chatbot(message, history):
 
 demo = gr.ChatInterface(fn=my_chatbot, save_history=True, textbox=gr.Textbox(placeholder='enter your query hurry'))
 
-demo.launch()
+demo.launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)))
     
