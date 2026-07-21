@@ -14,7 +14,7 @@ def my_chatbot(message, history):
         else:
             raise ValueError('there is an error in the chat history loop')
 
-    response = my_chat_engine.chat(message=message, chat_history=chat_history).response.split('</think>')[-1].strip()
+    response = my_chat_engine.chat(message=message, chat_history=chat_history).response #.split('</think>')[-1].strip()
 
     
     return response
