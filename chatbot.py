@@ -35,7 +35,10 @@ def my_chatbot(message, history):
     
 
 
-demo = gr.ChatInterface(fn=my_chatbot, save_history=True, textbox=gr.Textbox(placeholder='enter your query hurry'))
+demo = gr.ChatInterface(fn=my_chatbot, save_history=True, textbox=gr.Textbox(placeholder='enter your query hurry',
+                                                                             container=True,
+                                                                             autoscroll=True,
+                                                                             scale=7))
 
 demo.launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)))
 
